@@ -1,57 +1,77 @@
-import os
-import requests
-from flask import Flask, render_template, request
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Flask Weather App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap CDN -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <h1 class="text-center mb-4">🌦 Flask Weather App (°C)</h1>
 
-app = Flask(__name__)
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <form method="POST" class="card p-3 shadow-sm">
+          <div class="mb-3">
+            <label for="city" class="form-label">Enter City Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="city"
+              name="city"
+              placeholder="e.g. Hyderabad"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            Get Weather
+          </button>
+        </form>
+      </div>
+    </div>
 
-OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY")
+    {% if error %}
+    <div class="row justify-content-center mt-4">
+      <div class="col-md-6">
+        <div class="alert alert-danger text-center">
+          {{ error }}
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
+    {% if weather %}
+    <div class="row justify-content-center mt-4">
+      <div class="col-md-6">
+        <div class="card shadow-sm">
+          <div class="card-body text-center">
+            <h2 class="card-title">
+              {{ weather.city }}, {{ weather.country }}
+            </h2>
+            <p class="display-5 mb-0">
+              {{ weather.temperature }} °C
+            </p>
+            <p class="text-muted mb-2">
+              Feels like {{ weather.feels_like }} °C
+            </p>
+            <p class="mb-1">
+              🌤 {{ weather.description }}
+            </p>
+            <p class="mb-0">
+              💧 Humidity: {{ weather.humidity }}%
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
 
-@app.route("/", methods=["GET", "POST"])
-def index():
-    weather_data = None
-    error_message = None
-
-    if request.method == "POST":
-        city = request.form.get("city", "").strip()
-
-        if not city:
-            error_message = "Please enter a city name."
-        elif not OPENWEATHER_API_KEY:
-            error_message = "Server error: API key is not configured."
-        else:
-            try:
-                url = "https://api.openweathermap.org/data/2.5/weather"
-                params = {
-                    "q": city,
-                    "appid": OPENWEATHER_API_KEY,
-                    "units": "metric",  # Celsius
-                }
-                response = requests.get(url, params=params, timeout=5)
-                data = response.json()
-
-                if response.status_code != 200:
-                    error_message = data.get("message", "Could not fetch weather.")
-                else:
-                    weather_data = {
-                        "city": data["name"],
-                        "country": data["sys"]["country"],
-                        "temperature": data["main"]["temp"],
-                        "feels_like": data["main"]["feels_like"],
-                        "humidity": data["main"]["humidity"],
-                        "description": data["weather"][0]["description"].title(),
-                    }
-            except requests.RequestException:
-                error_message = "Network error while contacting weather service."
-
-    return render_template(
-        "index.html",
-        weather=weather_data,
-        error=error_message,
-    )
-
-
-if __name__ == "__main__":
-    # Local dev only; in Docker we'll use gunicorn
-    app.run(host="0.0.0.0", port=8000, debug=True)
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
